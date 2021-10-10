@@ -1,0 +1,8 @@
+{
+  "compileOnSave": true,
+  "include": ["./*"],
+  "compilerOptions": {
+    "target": "ES6",
+    "removeComments": true
+  }
+}
