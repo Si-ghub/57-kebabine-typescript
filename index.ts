@@ -1,8 +1,12 @@
 class Produktas {
+    public get barcode(): number {
+        return this._barcode;
+    }
+
     public readonly pavadinimas: string;
     public readonly svoris: number;
     public readonly kaina: number;
-    protected readonly barcode: number;
+    private readonly _barcode: number;
 
     public constructor(pavadinimas: string,
         svoris: number,
@@ -12,14 +16,27 @@ class Produktas {
         this.svoris = svoris;
         this.pavadinimas = pavadinimas;
 
-        this.barcode = 100000 + Math.round(Math.random() * 10000);
+        this._barcode = 100000 + Math.round(Math.random() * 10000);
     }
 
-    public spausdintiDuomenis(): void {
-        console.log(`Produktas: ${this.pavadinimas}`);
-        console.log(`Barkodas: ${this.barcode}`);
-        console.log(`Svoris: ${this.svoris} g.`);
-        console.log(`Kaina: ${this.kaina} eur.`);
+    public spausdintiDuomenis(element?: HTMLElement): void {
+        if (element) {
+            element.innerHTML += `
+                <div class="card">
+                    <div class="controls">
+                        <img onclick="istrintiProdukta(${this._barcode})" class="icon delete" src="https://cdn-icons-png.flaticon.com/512/1214/1214428.png">
+                        <img onclick="kopijuotiProdukta()" class="icon copy" src="https://cdn-icons-png.flaticon.com/512/54/54702.png">
+                    </div>
+                
+                    <h2>${this.pavadinimas}</h2>
+                    
+                    <ul>
+                        <li>Barkodas: <b>${this._barcode}</b></li>
+                        <li>Svoris: <b>${this.svoris} g.</b></li>
+                        <li>Kaina: <b>${this.kaina} eur.</b></li>
+                    </ul>
+                </div>`;
+        }
     }
 }
 
@@ -125,16 +142,63 @@ class Kebabas extends Produktas {
     }
 }
 
-const bulvytes = new Bulvytes(14, BulvytesTipas.Puseles);
+const UI = {
+    // https://stackoverflow.com/questions/13204759/typescript-or-javascript-type-casting
+    nameInput: document.getElementById("produktoPavadinimas") as HTMLInputElement,
+    priceInput: document.getElementById("produktoKaina") as HTMLInputElement,
+    weightInput: document.getElementById("produktoSvoris") as HTMLInputElement,
+    addButton: document.getElementById("pridetiProdukta") as HTMLButtonElement,
+    // https://www.typescriptlang.org/docs/handbook/2/generics.html
+    menuContainer: document.querySelector<HTMLDivElement>(".menu")
+}
 
-const kebabas = new Kebabas(667);
-const velniskasPadazas = new Padazas(PadazoTipas.Astrus, "Velniskas");
-const dieviskasPadazas = new Padazas(PadazoTipas.Cesnakinis, "Dieviskas");
-kebabas.pridetiPadaza(velniskasPadazas);
-kebabas.pridetiPadaza(dieviskasPadazas);
+let produktai: Produktas[] = [];
 
-kebabas.spausdintiDuomenis();
+UI.addButton.addEventListener("click", (e) => {
+    const pavadinimas = UI.nameInput.value;
+    const svoris = Number(UI.weightInput.value);
+    const kaina = Number(UI.priceInput.value);
 
-enum PitosTipas {
-    PilnoGrudo,
+    const pradzia = Date.now();
+
+    const naujasProduktas = new Produktas(pavadinimas, svoris, kaina);
+
+    produktai.push(naujasProduktas);
+
+    atvaizduotiProduktus();
+
+    const pabaiga = Date.now();
+
+    const skirtumas = (pabaiga - pradzia) / 1000;
+
+    console.log(`Praėjo ${skirtumas} sek.`)
+});
+
+function atvaizduotiProduktus(): void {
+    UI.menuContainer.innerHTML = "";
+
+    for (const produktas of produktai) {
+        produktas.spausdintiDuomenis(UI.menuContainer);
+    }
+}
+
+function kopijuotiProdukta(): void {
+    console.log("Kopijuoti produktą...");
+}
+
+function istrintiProdukta(barcode: number): void {
+    console.log("Trinti produktą...", barcode);
+
+    // const produktroIndeksas = produktai.findIndex((produktas) => {
+    //     return produktas.barcode === barcode;
+    // });
+    //
+    // if (produktroIndeksas === -1)
+    //     throw new Error("Product not found");
+    //
+    // produktai.splice(produktroIndeksas, 1);
+
+    produktai = produktai.filter((produktas) => produktas.barcode !== barcode);
+
+    atvaizduotiProduktus();
 }
