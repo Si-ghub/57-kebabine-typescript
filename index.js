@@ -1,9 +1,9 @@
 class Produktas {
-    constructor(pavadinimas, svoris, kaina) {
+    constructor(pavadinimas, svoris, kaina, barcode) {
         this.kaina = kaina;
         this.svoris = svoris;
         this.pavadinimas = pavadinimas;
-        this._barcode = 100000 + Math.round(Math.random() * 10000);
+        this._barcode = barcode || 100000 + Math.round(Math.random() * 10000);
     }
     get barcode() {
         return this._barcode;
@@ -14,7 +14,7 @@ class Produktas {
                 <div class="card">
                     <div class="controls">
                         <img onclick="istrintiProdukta(${this._barcode})" class="icon delete" src="https://cdn-icons-png.flaticon.com/512/1214/1214428.png">
-                        <img onclick="kopijuotiProdukta()" class="icon copy" src="https://cdn-icons-png.flaticon.com/512/54/54702.png">
+                        <img onclick="kopijuotiProdukta(${this._barcode})" class="icon copy" src="https://cdn-icons-png.flaticon.com/512/54/54702.png">
                     </div>
                 
                     <h2>${this.pavadinimas}</h2>
@@ -27,6 +27,14 @@ class Produktas {
                 </div>`;
         }
     }
+    toJSON() {
+        return {
+            kaina: this.kaina,
+            svoris: this.svoris,
+            pavadinimas: this.pavadinimas,
+            barcode: this._barcode
+        };
+    }
 }
 var BulvytesTipas;
 (function (BulvytesTipas) {
@@ -34,16 +42,6 @@ var BulvytesTipas;
     BulvytesTipas["Laiveliai"] = "lvl";
     BulvytesTipas["Puseles"] = "psls";
 })(BulvytesTipas || (BulvytesTipas = {}));
-class A {
-}
-const a = new A();
-a.x;
-class B extends A {
-    metodas() {
-        this.z;
-        this.x;
-    }
-}
 class Bulvytes extends Produktas {
     constructor(kiekis, tipas = BulvytesTipas.Lazdeles) {
         super("Bulvytės", 150, 2);
@@ -94,6 +92,7 @@ class Kebabas extends Produktas {
         console.log("================");
     }
 }
+const PRODUCTS_LOCAL_STORAGE_KEY = "products";
 const UI = {
     nameInput: document.getElementById("produktoPavadinimas"),
     priceInput: document.getElementById("produktoKaina"),
@@ -102,17 +101,14 @@ const UI = {
     menuContainer: document.querySelector(".menu")
 };
 let produktai = [];
-UI.addButton.addEventListener("click", (e) => {
+UI.addButton.addEventListener("click", () => {
     const pavadinimas = UI.nameInput.value;
     const svoris = Number(UI.weightInput.value);
     const kaina = Number(UI.priceInput.value);
-    const pradzia = Date.now();
     const naujasProduktas = new Produktas(pavadinimas, svoris, kaina);
     produktai.push(naujasProduktas);
     atvaizduotiProduktus();
-    const pabaiga = Date.now();
-    const skirtumas = (pabaiga - pradzia) / 1000;
-    console.log(`Praėjo ${skirtumas} sek.`);
+    saveProducts();
 });
 function atvaizduotiProduktus() {
     UI.menuContainer.innerHTML = "";
@@ -120,11 +116,40 @@ function atvaizduotiProduktus() {
         produktas.spausdintiDuomenis(UI.menuContainer);
     }
 }
-function kopijuotiProdukta() {
-    console.log("Kopijuoti produktą...");
+function kopijuotiProdukta(barcode) {
+    console.log("Kopijuoti produktą!");
+    const produktas = produktai.find((produktas) => produktas.barcode === barcode);
+    if (!produktas)
+        throw new Error("Produktas nerastas!");
+    const naujasProduktas = new Produktas(produktas.pavadinimas, produktas.svoris, produktas.kaina);
+    produktai.push(naujasProduktas);
+    naujasProduktas.spausdintiDuomenis(UI.menuContainer);
+    saveProducts();
 }
 function istrintiProdukta(barcode) {
     console.log("Trinti produktą...", barcode);
     produktai = produktai.filter((produktas) => produktas.barcode !== barcode);
     atvaizduotiProduktus();
+    saveProducts();
 }
+function loadProducts() {
+    const p = window.localStorage.getItem(PRODUCTS_LOCAL_STORAGE_KEY);
+    if (!p) {
+        return;
+    }
+    const produktaiBeMetodu = JSON.parse(p);
+    for (const produktas of produktaiBeMetodu) {
+        const naujasProduktas = new Produktas(produktas.pavadinimas, produktas.svoris, produktas.kaina, produktas.barcode);
+        produktai.push(naujasProduktas);
+    }
+    const barkodai = produktai.map((produktas) => {
+        return produktas.barcode;
+    });
+    console.log(barkodai);
+    atvaizduotiProduktus();
+}
+function saveProducts() {
+    const produktaiString = JSON.stringify(produktai);
+    window.localStorage.setItem(PRODUCTS_LOCAL_STORAGE_KEY, produktaiString);
+}
+loadProducts();
