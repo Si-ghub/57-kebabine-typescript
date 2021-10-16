@@ -25,6 +25,7 @@ class Produktas {
         this.svoris = svoris;
         this.pavadinimas = pavadinimas;
 
+        // grazina pirmaja truthy reiksme, jei nepaduoda - falsy/undefined
         this._barcode = barcode || 100000 + Math.round(Math.random() * 10000);
     }
 
@@ -48,6 +49,9 @@ class Produktas {
         }
     }
 
+
+    // metodas kuris grazins tik cia nurodytas reiksmes/atributus
+    // kuo virsta klase kai ja bandome JSON.stingify-paversti i stringa
     public toJSON(): any {
         return {
             kaina: this.kaina,
@@ -204,7 +208,9 @@ function istrintiProdukta(barcode: number): void {
 }
 
 function loadProducts(): void {
-    const p = window.localStorage.getItem(PRODUCTS_LOCAL_STORAGE_KEY);    // "[{"kaina":123,"svoris":33,"pavadinimas":"Lego","_barcode":102279}]"
+    const p = window.localStorage.getItem(PRODUCTS_LOCAL_STORAGE_KEY);
+    // ka matome local storage
+    // "[{"kaina":123,"svoris":33,"pavadinimas":"Lego","_barcode":102279}]"
 
     if (!p) {
         return;
@@ -213,6 +219,7 @@ function loadProducts(): void {
     // !"" - true
     // !"{}" - false
 
+    // is stringo pavercia i JS Objekta
     const produktaiBeMetodu: ProduktasI[] = JSON.parse(p);
 
     for (const produktas of produktaiBeMetodu) {
@@ -234,6 +241,7 @@ function loadProducts(): void {
     atvaizduotiProduktus();
 }
 
+// issaugos produktus i local storage
 function saveProducts(): void {
     const produktaiString = JSON.stringify(produktai);
 
